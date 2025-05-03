@@ -1,18 +1,35 @@
 <?php
+// On inclut le fichier de connexion à la base de données (et qui démarre probablement la session)
 require_once("connexion.php");
 
+// On vérifie si le formulaire a été soumis via la méthode POST
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    // On récupère les données du formulaire en supprimant les espaces inutiles
     $email = trim($_POST["email"]);
     $motDePasse = trim($_POST["mot_de_passe"]);
 
+    // On vérifie que les deux champs ont été remplis
     if ($email && $motDePasse) {
+
+        // On chiffre (hachage sécurisé) le mot de passe avec l'algorithme par défaut (actuellement BCRYPT)
         $hash = password_hash($motDePasse, PASSWORD_DEFAULT);
+
+        // On prépare la requête SQL pour insérer un nouvel utilisateur dans la base de données
         $stmt = $pdo->prepare("INSERT INTO utilisateurs (email, mot_de_passe) VALUES (:email, :mot_de_passe)");
 
         try {
-            $stmt->execute(["email" => $email, "mot_de_passe" => $hash]);
+            // On exécute la requête avec les valeurs sécurisées (évite les injections SQL)
+            $stmt->execute([
+                "email" => $email,
+                "mot_de_passe" => $hash
+            ]);
+
+            // Si tout se passe bien, on affiche un message de confirmation
             echo "Utilisateur ajouté avec succès !";
+
         } catch (PDOException $e) {
+            // Si une erreur survient (par exemple : email déjà existant), on l'affiche
             echo "Erreur : " . $e->getMessage();
         }
     }
